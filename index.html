@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bite Company - Inventory Pro ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #060913; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .glass { background: rgba(13, 19, 36, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5); }
+        .neon-glow { box-shadow: 0 0 20px rgba(56, 189, 248, 0.25); }
+        .loader { border-top-color: #38bdf8; animation: spinner 0.8s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Fullscreen responsive window container styling */
+        .fullscreen-window { width: 100%; min-height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: flex-start; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex-col items-center justify-center backdrop-blur-md">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-700 h-14 w-14 mb-4"></div>
+        <p class="text-sky-400 font-bold tracking-wider animate-pulse">Syncing with Google Sheets...</p>
+    </div>
+
+    <!-- LOGIN SECTION -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md neon-glow">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-sky-500/10 text-sky-400 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl border border-sky-500/30 shadow-inner">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-wider text-white">BITE ERP <span class="text-sky-400">PRO</span></h1>
+                <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-semibold">ZOREX ZYSTEM</p>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Username</label>
+                    <input type="text" id="loginUser" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white focus:outline-none focus:border-sky-400 transition" placeholder="admin">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Password</label>
+                    <input type="password" id="loginPass" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white focus:outline-none focus:border-sky-400 transition" placeholder="••••">
+                </div>
+                <p id="loginError" class="text-rose-400 text-xs font-medium hidden">වැරදි Username හෝ Password එකකි!</p>
+                <button type="submit" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-sky-500/25 tracking-wide">
+                    SYSTEM LOGIN
+                </button>
+            </form>
+            <div class="mt-8 text-center">
+                <span class="text-[11px] uppercase tracking-widest text-slate-500 font-bold">ZOREX Zystem</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SECTION -->
+    <div id="appSection" class="hidden flex-grow flex flex-col justify-between">
+        <div>
+            <!-- Navbar -->
+            <nav class="glass sticky top-0 z-40 px-6 py-4 flex justify-between items-center border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-lg">
+                        <i class="fas fa-cookie-bite"></i>
+                    </div>
+                    <div>
+                        <span class="font-black tracking-wider text-lg text-white">BITE<span class="text-sky-400">STOCK</span></span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Zorex Zystem</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="syncAllData()" class="bg-slate-800/80 hover:bg-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold text-sky-400 flex items-center gap-2 border border-slate-700 transition shadow">
+                        <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">Sync Cloud</span>
+                    </button>
+                    <span id="currentUserBadge" class="text-xs font-bold bg-sky-500/10 text-sky-300 border border-sky-500/20 px-3.5 py-2 rounded-2xl shadow"></span>
+                    <button onclick="logout()" class="text-rose-400 hover:text-rose-300 text-sm p-2.5 transition">
+                        <i class="fas fa-power-off text-base"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Navigation Tabs -->
+            <div class="flex overflow-x-auto bg-slate-950/80 border-b border-slate-800/80 px-6 gap-3 py-2 scrollbar-none">
+                <button onclick="switchTab('dashboard')" class="tab-btn active-tab py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-sky-400 text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl bg-slate-900/40" data-tab="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</button>
+                <button onclick="switchTab('items')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="items"><i class="fas fa-tags"></i> Items & Prices</button>
+                <button onclick="switchTab('grn')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="grn"><i class="fas fa-plus-circle"></i> Batch GRN</button>
+                <button onclick="switchTab('loading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="loading"><i class="fas fa-truck-loading"></i> Batch Loading</button>
+                <button onclick="switchTab('unloading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="unloading"><i class="fas fa-undo-alt"></i> Unloading (Return)</button>
+                <button onclick="switchTab('reports')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="reports"><i class="fas fa-file-excel"></i> Reports & WhatsApp</button>
+            </div>
+
+            <!-- Main Container (Fullscreen Type Layouts) -->
+            <div class="max-w-[96%] mx-auto p-6 space-y-6">
+
+                <!-- 1. DASHBOARD TAB -->
+                <div id="tab-dashboard" class="tab-content fullscreen-window space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="glass p-6 rounded-3xl border-l-4 border-sky-400 shadow-xl">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">මුළු තොග වටිනාකම (Cost)</p>
+                            <h2 id="kpiTotalCost" class="text-3xl font-black text-white mt-2">Rs. 0.00</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl border-l-4 border-emerald-400 shadow-xl">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">විකුණුම් වටිනාකම (Sell)</p>
+                            <h2 id="kpiTotalSell" class="text-3xl font-black text-emerald-400 mt-2">Rs. 0.00</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl border-l-4 border-amber-400 shadow-xl">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">හොඳ තොගය (Good Packets)</p>
+                            <h2 id="kpiTotalUnits" class="text-3xl font-black text-amber-400 mt-2">0</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl border-l-4 border-rose-400 shadow-xl">
+                            <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">නරක් වූ තොගය (Damaged)</p>
+                            <h2 id="kpiDamagedUnits" class="text-3xl font-black text-rose-400 mt-2">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow">
+                        <div class="glass p-6 rounded-3xl shadow-xl flex flex-col justify-between">
+                            <h3 class="font-bold text-slate-200 mb-4 text-sm uppercase tracking-wider">Live Stock Levels</h3>
+                            <div class="flex-grow flex items-center justify-center">
+                                <canvas id="stockChart" height="260"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass p-6 rounded-3xl shadow-xl overflow-x-auto flex flex-col">
+                            <h3 class="font-bold text-slate-200 mb-4 text-sm uppercase tracking-wider">වත්මන් තොග සාරාංශය</h3>
+                            <div class="flex-grow overflow-y-auto max-h-[350px]">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="text-slate-400 border-b border-slate-800 text-xs uppercase sticky top-0 bg-slate-950/80 backdrop-blur">
+                                        <tr>
+                                            <th class="py-3 px-2">Item</th>
+                                            <th class="py-3 px-2">Good</th>
+                                            <th class="py-3 px-2">Damaged</th>
+                                            <th class="py-3 px-2">Total Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboardStockTable" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. ITEMS & PRICES TAB -->
+                <div id="tab-items" class="tab-content fullscreen-window hidden space-y-6">
+                    <div class="glass p-8 rounded-3xl max-w-2xl shadow-2xl mx-auto w-full">
+                        <h3 class="text-xl font-bold mb-6 text-sky-400 flex items-center gap-3"><i class="fas fa-plus-circle text-2xl"></i> Add New Item(Stock)</h3>
+                        <form id="addItemForm" class="space-y-5">
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item Name (උදා: Murukku 50g)</label>
+                                <input type="text" id="itemName" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
+                            </div>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">නිෂ්පාදන මිල (Cost - Rs)</label>
+                                    <input type="number" step="0.01" id="itemCost" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">විකුණුම් මිල (Sell - Rs)</label>
+                                    <input type="number" step="0.01" id="itemSell" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-4 rounded-2xl transition shadow-xl shadow-sky-500/25 tracking-wider mt-4">SAVE NEW ITEM</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 3. BATCH GRN TAB -->
+                <div id="tab-grn" class="tab-content fullscreen-window hidden space-y-6">
+                    <div class="glass p-8 rounded-3xl border-t-4 border-emerald-400 max-w-5xl mx-auto w-full shadow-2xl">
+                        <h3 class="text-xl font-bold mb-1 text-emerald-400 flex items-center gap-3"><i class="fas fa-boxes text-2xl"></i> Multi-Item Batch GRN (Stock In)</h3>
+                        <p class="text-xs text-slate-400 mb-6">අයිතම කිහිපයක් එකවර එකතු කර, අවශ්‍ය නම් ඉවත් කර, 'Submit GRN Batch' ඔබන්න.</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-4">
+                            <div class="sm:col-span-2">
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                <select id="grnItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-emerald-400 outline-none item-dropdown"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
+                                <input type="number" id="grnQty" min="1" placeholder="උදා: 100" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-emerald-400 outline-none">
+                            </div>
+                        </div>
+                        <button type="button" onclick="addToGrnBatch()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold px-6 py-3 rounded-2xl text-sm transition flex items-center gap-2 mb-6 shadow">
+                            <i class="fas fa-plus"></i> Batch List එකට එකතු කරන්න
+                        </button>
+
+                        <div class="overflow-x-auto mb-6 border border-slate-800 rounded-2xl shadow-inner">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-4">Item Name</th>
+                                        <th class="p-4">Quantity</th>
+                                        <th class="p-4">Est. Value (LKR)</th>
+                                        <th class="p-4 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grnCartTableBody" class="divide-y divide-slate-800">
+                                    <tr><td colspan="4" class="p-6 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="button" onclick="submitGrnBatch()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-emerald-600/30 tracking-wider">
+                            SUBMIT GRN BATCH TO CLOUD (+ STOCK)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. BATCH LOADING TAB -->
+                <div id="tab-loading" class="tab-content fullscreen-window hidden space-y-6">
+                    <div class="glass p-8 rounded-3xl border-t-4 border-amber-400 max-w-5xl mx-auto w-full shadow-2xl">
+                        <h3 class="text-xl font-bold mb-1 text-amber-400 flex items-center gap-3"><i class="fas fa-truck-loading text-2xl"></i> Multi-Item Batch Loading (Out)</h3>
+                        <p class="text-xs text-slate-400 mb-6">වාහනයට බඩු පැටවීමට අයිතම කිහිපයක් එකතු කර Real-time Stock validation සමඟ Submit කරන්න.</p>
+                        
+                        <div class="mb-5 max-w-md">
+                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
+                            <input type="text" id="loadVehicle" placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-4">
+                            <div class="sm:col-span-2">
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                <select id="loadItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none item-dropdown"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
+                                <input type="number" id="loadQty" min="1" placeholder="උදා: 50" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none">
+                            </div>
+                        </div>
+                        <p id="loadValidationError" class="text-rose-400 text-xs font-semibold mb-4 hidden"></p>
+                        
+                        <button type="button" onclick="addToLoadBatch()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold px-6 py-3 rounded-2xl text-sm transition flex items-center gap-2 mb-6 shadow">
+                            <i class="fas fa-plus"></i> Load List එකට එකතු කරන්න
+                        </button>
+
+                        <div class="overflow-x-auto mb-6 border border-slate-800 rounded-2xl shadow-inner">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-4">Item Name</th>
+                                        <th class="p-4">Quantity</th>
+                                        <th class="p-4">Est. Value (LKR)</th>
+                                        <th class="p-4 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="loadCartTableBody" class="divide-y divide-slate-800">
+                                    <tr><td colspan="4" class="p-6 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="button" onclick="submitLoadBatch()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-amber-600/30 tracking-wider">
+                            SUBMIT LOADING BATCH (- STOCK)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. UNLOADING TAB -->
+                <div id="tab-unloading" class="tab-content fullscreen-window hidden space-y-6">
+                    <div class="glass p-8 rounded-3xl border-t-4 border-purple-400 max-w-2xl mx-auto w-full shadow-2xl">
+                        <h3 class="text-xl font-bold mb-1 text-purple-400 flex items-center gap-3"><i class="fas fa-undo-alt text-2xl"></i> Unloading - Good / Bad </h3>
+                        <p class="text-xs text-slate-400 mb-6">වාහනයෙන් ගෙන ආපු බඩු හොඳ තත්ත්වයේද නැත්නම් නරක් වී ඇත්දැයි තෝරන්න.</p>
+                        <form id="unloadingForm" class="space-y-5">
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
+                                <input type="text" id="unloadVehicle" required placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                <select id="unloadItemSelect" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none item-dropdown"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">තත්ත්වය (Stock Type)</label>
+                                <select id="unloadCondition" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
+                                    <option value="GOOD">Good Stock (ආපහු ප්‍රධාන Stock එකට එකතු කරන්න)</option>
+                                    <option value="DAMAGED">Damaged / Expired (නරක් වූ තොගයට යොමු කරන්න)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Quantity)</label>
+                                <input type="number" id="unloadQty" min="1" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-purple-600/30 tracking-wider mt-4">UNLOAD PROCESS</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 6. REPORTS & WHATSAPP SUMMARY TAB -->
+                <div id="tab-reports" class="tab-content fullscreen-window hidden space-y-6">
+                    <div class="glass p-8 rounded-3xl space-y-5 shadow-2xl">
+                        <div class="flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-white flex items-center gap-3"><i class="fas fa-file-invoice-dollar text-2xl text-emerald-400"></i> Daily / Monthly Report  & WhatsApp</h3>
+                                <p class="text-xs text-slate-400">වාර්තා පරීක්ෂා කර, Excel ලෙස Download කරගන්න හෝ WhatsApp හරහා Owner ට යවන්න.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="sendWhatsAppSummary()" class="bg-emerald-500 hover:bg-emerald-400 px-6 py-3 rounded-2xl text-sm font-bold text-slate-950 flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition">
+                                    <i class="fab fa-whatsapp text-lg"></i> Send WhatsApp Summary
+                                </button>
+                                <button onclick="exportToExcel()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-6 py-3 rounded-2xl text-sm font-bold text-white flex items-center gap-2 transition shadow">
+                                    <i class="fas fa-file-excel text-emerald-400 text-lg"></i> Excel Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-4 border-t border-slate-800">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">වාර්තා වර්ගය (Report Type)</label>
+                                <select id="reportTypeSelect" onchange="toggleReportFilterType()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-sm outline-none focus:border-sky-400">
+                                    <option value="DAILY">Daily Report (දෛනික වාර්තාව)</option>
+                                    <option value="MONTHLY">Monthly Report (මාසික වාර්තාව)</option>
+                                </select>
+                            </div>
+                            <div id="dailyFilterContainer">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">දිනය තෝරන්න (Select Date)</label>
+                                <input type="date" id="filterDate" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-sm text-white outline-none focus:border-sky-400">
+                            </div>
+                            <div id="monthlyFilterContainer" class="hidden">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">මාසය තෝරන්න (Select Month)</label>
+                                <input type="month" id="filterMonth" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-sm text-white outline-none focus:border-sky-400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass p-6 rounded-3xl overflow-x-auto shadow-2xl flex-grow">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-slate-400 border-b border-slate-800 text-xs uppercase">
+                                <tr>
+                                    <th class="py-3 px-3">Date</th>
+                                    <th class="py-3 px-3">Type</th>
+                                    <th class="py-3 px-3">Vehicle / Ref</th>
+                                    <th class="py-3 px-3">Item Name</th>
+                                    <th class="py-3 px-3">Qty</th>
+                                    <th class="py-3 px-3">Value (LKR)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="txTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Watermark Footer -->
+        <footer class="w-full text-center py-4 border-t border-slate-800/80 bg-slate-950/60 mt-10">
+            <p class="text-xs font-bold uppercase tracking-widest text-slate-500">ZOREX Zystem</p>
+        </footer>
+    </div>
+
+    <script>
+        // ==========================================
+        // ඔයාගේ SHEETDB API URL එක මෙතනට දාන්න
+        const API_URL = "https://sheetdb.io/api/v1/g6da9agm2g53q"; 
+        // ==========================================
+
+        let itemsData = [];
+        let txData = [];
+        let stockChartInstance = null;
+
+        // Batch Carts
+        let grnCart = [];
+        let loadCart = [];
+
+        document.getElementById('filterDate').valueAsDate = new Date();
+        document.getElementById('filterMonth').value = new Date().toISOString().slice(0, 7);
+
+        window.onload = () => {
+            const savedUser = localStorage.getItem('bite_user');
+            if (savedUser) {
+                showApp(JSON.parse(savedUser));
+            }
+            loadOfflineCache();
+        };
+
+        function toggleLoader(show) {
+            const el = document.getElementById('loadingOverlay');
+            el.style.display = show ? 'flex' : 'none';
+        }
+
+        function saveOfflineCache(items, txs) {
+            try {
+                localStorage.setItem('bite_items_cache', JSON.stringify(items));
+                localStorage.setItem('bite_tx_cache', JSON.stringify(txs));
+            } catch(e) { console.error("Cache save error", e); }
+        }
+
+        function loadOfflineCache() {
+            try {
+                const cachedItems = localStorage.getItem('bite_items_cache');
+                const cachedTx = localStorage.getItem('bite_tx_cache');
+                if (cachedItems && cachedTx && itemsData.length === 0) {
+                    itemsData = JSON.parse(cachedItems);
+                    txData = JSON.parse(cachedTx);
+                    updateUI();
+                }
+            } catch(e) { console.error("Cache load error", e); }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+            toggleLoader(true);
+
+            try {
+                const res = await fetch(`${API_URL}/search?sheet=Users&username=${u}&password=${p}`);
+                const users = await res.json();
+                if (users.length > 0) {
+                    localStorage.setItem('bite_user', JSON.stringify(users[0]));
+                    document.getElementById('loginError').classList.add('hidden');
+                    showApp(users[0]);
+                } else {
+                    document.getElementById('loginError').classList.remove('hidden');
+                }
+            } catch (err) {
+                const cachedUser = JSON.parse(localStorage.getItem('bite_user') || '{}');
+                if(cachedUser.username === u) {
+                    showApp(cachedUser);
+                } else {
+                    alert("අන්තර්ජාල සම්බන්ධතාවක් නොමැති අතර නොබැඳි පරිශීලක තොරතුරු සත්‍යාපනය අසාර්ථක විය.");
+                }
+            }
+            toggleLoader(false);
+        });
+
+        function showApp(user) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            document.getElementById('currentUserBadge').innerText = `${user.username} (${user.role})`;
+            syncAllData();
+        }
+
+        function logout() {
+            localStorage.removeItem('bite_user');
+            location.reload();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-sky-400', 'text-sky-400', 'bg-slate-900/60');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            activeBtn.classList.add('border-sky-400', 'text-sky-400', 'bg-slate-900/60');
+            activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        }
+
+        async function syncAllData() {
+            toggleLoader(true);
+            try {
+                const [itemsRes, txRes] = await Promise.all([
+                    fetch(`${API_URL}?sheet=Items`),
+                    fetch(`${API_URL}?sheet=Transactions`)
+                ]);
+                itemsData = await itemsRes.json();
+                txData = await txRes.json();
+                
+                saveOfflineCache(itemsData, txData);
+                updateUI();
+            } catch (err) {
+                console.warn("Cloud sync failed, loading from offline cache...", err);
+                loadOfflineCache();
+            }
+            toggleLoader(false);
+        }
+
+        function updateUI() {
+            const dropdowns = document.querySelectorAll('.item-dropdown');
+            dropdowns.forEach(select => {
+                select.innerHTML = '<option value="">-- Item එකක් තෝරන්න --</option>';
+                itemsData.forEach(item => {
+                    select.innerHTML += `<option value="${item.id}">${item.name} (Stock: ${item.stock || 0})</option>`;
+                });
+            });
+
+            let totalCost = 0, totalSell = 0, totalUnits = 0, totalDamaged = 0;
+            const tbody = document.getElementById('dashboardStockTable');
+            tbody.innerHTML = '';
+
+            const labels = [], stockValues = [];
+
+            itemsData.forEach(item => {
+                const stk = parseFloat(item.stock) || 0;
+                const dmg = parseFloat(item.damaged_stock) || 0;
+                const cost = parseFloat(item.cost_price) || 0;
+                const sell = parseFloat(item.sell_price) || 0;
+                const rowVal = stk * cost;
+
+                totalCost += rowVal;
+                totalSell += (stk * sell);
+                totalUnits += stk;
+                totalDamaged += dmg;
+
+                labels.push(item.name);
+                stockValues.push(stk);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="py-3 px-2 font-semibold text-white">${item.name}</td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-sky-400 border border-slate-800">${stk}</span></td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-rose-400 border border-slate-800">${dmg}</span></td>
+                        <td class="py-3 px-2 font-bold text-emerald-400">Rs. ${rowVal.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('kpiTotalCost').innerText = `Rs. ${totalCost.toLocaleString()}`;
+            document.getElementById('kpiTotalSell').innerText = `Rs. ${totalSell.toLocaleString()}`;
+            document.getElementById('kpiTotalUnits').innerText = totalUnits.toLocaleString();
+            document.getElementById('kpiDamagedUnits').innerText = totalDamaged.toLocaleString();
+
+            renderChart(labels, stockValues);
+            renderTransactions();
+        }
+
+        function renderChart(labels, data) {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            if (stockChartInstance) stockChartInstance.destroy();
+            
+            stockChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Available Stock',
+                        data: data,
+                        backgroundColor: 'rgba(56, 189, 248, 0.5)',
+                        borderColor: '#38bdf8',
+                        borderWidth: 1.5,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoader(true);
+            const newItem = {
+                id: 'ITM-' + Date.now(),
+                name: document.getElementById('itemName').value,
+                cost_price: document.getElementById('itemCost').value,
+                sell_price: document.getElementById('itemSell').value,
+                stock: 0,
+                damaged_stock: 0
+            };
+
+            await fetch(`${API_URL}?sheet=Items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: [newItem] })
+            });
+
+            e.target.reset();
+            await syncAllData();
+            alert("අලුත් Item එක සාර්ථකව එකතු විය!");
+        });
+
+        function addToGrnBatch() {
+            const itemId = document.getElementById('grnItemSelect').value;
+            const qty = parseFloat(document.getElementById('grnQty').value);
+            if (!itemId || !qty || qty <= 0) {
+                alert("කරුණාකර නිවැරදි Item එකක් සහ ප්‍රමාණයක් ඇතුළත් කරන්න!");
+                return;
+            }
+
+            const item = itemsData.find(i => i.id === itemId);
+            if (!item) return;
+
+            grnCart.push({
+                id: item.id,
+                name: item.name,
+                qty: qty,
+                cost: parseFloat(item.cost_price) || 0
+            });
+
+            document.getElementById('grnQty').value = '';
+            renderGrnCart();
+        }
+
+        function removeFromGrnBatch(index) {
+            grnCart.splice(index, 1);
+            renderGrnCart();
+        }
+
+        function renderGrnCart() {
+            const tbody = document.getElementById('grnCartTableBody');
+            if (grnCart.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            grnCart.forEach((item, index) => {
+                const estVal = item.qty * item.cost;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 font-semibold text-white">${item.name}</td>
+                        <td class="p-4 text-sky-400 font-bold">${item.qty}</td>
+                        <td class="p-4 text-emerald-400">Rs. ${estVal.toLocaleString()}</td>
+                        <td class="p-4 text-center"><button onclick="removeFromGrnBatch(${index})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function submitGrnBatch() {
+            if (grnCart.length === 0) {
+                alert("කරුණාකර අයිතම එකක්වත් Batch එකට එකතු කරන්න!");
+                return;
+            }
+
+            toggleLoader(true);
+            let today = new Date().toISOString().split('T')[0];
+
+            for (let entry of grnCart) {
+                const item = itemsData.find(i => i.id === entry.id);
+                if (!item) continue;
+
+                let newStock = (parseFloat(item.stock) || 0) + entry.qty;
+                let txValue = entry.qty * entry.cost;
+
+                await fetch(`${API_URL}/id/${entry.id}?sheet=Items`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: { stock: newStock } })
+                });
+
+                await fetch(`${API_URL}?sheet=Transactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{
+                        tx_id: 'TX-' + Date.now() + Math.floor(Math.random()*100),
+                        date: today,
+                        type: 'GRN',
+                        vehicle: 'Main Store',
+                        item_name: entry.name,
+                        qty: entry.qty,
+                        value: txValue
+                    }] })
+                });
+            }
+
+            grnCart = [];
+            renderGrnCart();
+            await syncAllData();
+            alert("GRN Batch එක සාර්ථකව Cloud එකට Save විය!");
+        }
+
+        function addToLoadBatch() {
+            const itemId = document.getElementById('loadItemSelect').value;
+            const qty = parseFloat(document.getElementById('loadQty').value);
+            const errEl = document.getElementById('loadValidationError');
+            errEl.classList.add('hidden');
+
+            if (!itemId || !qty || qty <= 0) {
+                alert("කරුණාකර Item එකක් සහ නිවැරදි ප්‍රමාණයක් දෙන්න!");
+                return;
+            }
+
+            const item = itemsData.find(i => i.id === itemId);
+            if (!item) return;
+
+            let currentStock = parseFloat(item.stock) || 0;
+            let existingInCart = loadCart.reduce((sum, i) => i.id === itemId ? sum + i.qty : sum, 0);
+
+            if ((existingInCart + qty) > currentStock) {
+                errEl.innerText = `දෝෂයයි: ${item.name} සඳහා ප්‍රමාණවත් Stock නැත! (දැනට ඇත්තේ: ${currentStock}, ඔබ ඉල්ලා ඇති එකතුව: ${existingInCart + qty})`;
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            loadCart.push({
+                id: item.id,
+                name: item.name,
+                qty: qty,
+                cost: parseFloat(item.cost_price) || 0
+            });
+
+            document.getElementById('loadQty').value = '';
+            renderLoadCart();
+        }
+
+        function removeFromLoadBatch(index) {
+            loadCart.splice(index, 1);
+            renderLoadCart();
+        }
+
+        function renderLoadCart() {
+            const tbody = document.getElementById('loadCartTableBody');
+            if (loadCart.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            loadCart.forEach((item, index) => {
+                const estVal = item.qty * item.cost;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 font-semibold text-white">${item.name}</td>
+                        <td class="p-4 text-amber-400 font-bold">${item.qty}</td>
+                        <td class="p-4 text-emerald-400">Rs. ${estVal.toLocaleString()}</td>
+                        <td class="p-4 text-center"><button onclick="removeFromLoadBatch(${index})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function submitLoadBatch() {
+            const vehicle = document.getElementById('loadVehicle').value.trim();
+            if (!vehicle) {
+                alert("කරුණාකර වාහන අංකය හෝ Rep නම ඇතුළත් කරන්න!");
+                return;
+            }
+            if (loadCart.length === 0) {
+                alert("Loading List එකට අයිතම එකතු කර නැත!");
+                return;
+            }
+
+            toggleLoader(true);
+            let today = new Date().toISOString().split('T')[0];
+
+            for (let entry of loadCart) {
+                const item = itemsData.find(i => i.id === entry.id);
+                if (!item) continue;
+
+                let currentStock = parseFloat(item.stock) || 0;
+                let newStock = currentStock - entry.qty;
+                let txValue = entry.qty * entry.cost;
+
+                await fetch(`${API_URL}/id/${entry.id}?sheet=Items`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: { stock: newStock } })
+                });
+
+                await fetch(`${API_URL}?sheet=Transactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{
+                        tx_id: 'TX-' + Date.now() + Math.floor(Math.random()*100),
+                        date: today,
+                        type: 'LOADING',
+                        vehicle: vehicle,
+                        item_name: entry.name,
+                        qty: entry.qty,
+                        value: txValue
+                    }] })
+                });
+            }
+
+            loadCart = [];
+            document.getElementById('loadVehicle').value = '';
+            renderLoadCart();
+            await syncAllData();
+            alert("Loading Batch එක සාර්ථකව Process විය!");
+        }
+
+        document.getElementById('unloadingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const itemId = document.getElementById('unloadItemSelect').value;
+            const qty = parseFloat(document.getElementById('unloadQty').value);
+            const vehicle = document.getElementById('unloadVehicle').value;
+            const condition = document.getElementById('unloadCondition').value;
+
+            const item = itemsData.find(i => i.id === itemId);
+            if (!item) return;
+
+            toggleLoader(true);
+            let today = new Date().toISOString().split('T')[0];
+            let txValue = qty * (parseFloat(item.cost_price) || 0);
+
+            let patchBody = {};
+            let txType = '';
+
+            if (condition === 'GOOD') {
+                let newStock = (parseFloat(item.stock) || 0) + qty;
+                patchBody = { stock: newStock };
+                txType = 'UNLOADING (GOOD)';
+            } else {
+                let newDamaged = (parseFloat(item.damaged_stock) || 0) + qty;
+                patchBody = { damaged_stock: newDamaged };
+                txType = 'UNLOADING (DAMAGED)';
+            }
+
+            await fetch(`${API_URL}/id/${itemId}?sheet=Items`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: patchBody })
+            });
+
+            await fetch(`${API_URL}?sheet=Transactions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: [{
+                    tx_id: 'TX-' + Date.now(),
+                    date: today,
+                    type: txType,
+                    vehicle: vehicle,
+                    item_name: `${item.name} (${condition})`,
+                    qty: qty,
+                    value: txValue
+                }] })
+            });
+
+            e.target.reset();
+            await syncAllData();
+            alert(`Unload (${condition}) සාර්ථකව සටහන් විය!`);
+        });
+
+        function sendWhatsAppSummary() {
+            const reportType = document.getElementById('reportTypeSelect').value;
+            let label = "";
+            let filteredTx = [];
+
+            if (reportType === 'DAILY') {
+                label = document.getElementById('filterDate').value || new Date().toISOString().split('T')[0];
+                filteredTx = txData.filter(t => t.date === label);
+            } else {
+                label = document.getElementById('filterMonth').value || new Date().toISOString().slice(0, 7);
+                filteredTx = txData.filter(t => t.date && t.date.startsWith(label));
+            }
+
+            let totalTxVal = filteredTx.reduce((sum, t) => sum + (parseFloat(t.value) || 0), 0);
+            let grnTotal = filteredTx.filter(t => t.type === 'GRN').reduce((sum, t) => sum + (parseFloat(t.qty) || 0), 0);
+            let loadTotal = filteredTx.filter(t => t.type === 'LOADING').reduce((sum, t) => sum + (parseFloat(t.qty) || 0), 0);
+
+            let message = `*📦 BITE COMPANY - INVENTORY SUMMARY*%0A`;
+            message += `-----------------------------------%0A`;
+            message += `📅 Period/Date: *${label}*%0A`;
+            message += `📥 Total GRN Packets: *${grnTotal}*%0A`;
+            message += `🚚 Total Loaded Packets: *${loadTotal}*%0A`;
+            message += `💰 Total Transaction Value: *Rs. ${totalTxVal.toLocaleString()}*%0A`;
+            message += `-----------------------------------%0A`;
+            message += `_Generated via ZOREX Zystem_`;
+
+            const whatsappUrl = `https://wa.me/?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function toggleReportFilterType() {
+            const type = document.getElementById('reportTypeSelect').value;
+            const dailyCont = document.getElementById('dailyFilterContainer');
+            const monthlyCont = document.getElementById('monthlyFilterContainer');
+
+            if (type === 'DAILY') {
+                dailyCont.classList.remove('hidden');
+                monthlyCont.classList.add('hidden');
+            } else {
+                dailyCont.classList.add('hidden');
+                monthlyCont.classList.remove('hidden');
+            }
+            renderTransactions();
+        }
+
+        function renderTransactions() {
+            const reportType = document.getElementById('reportTypeSelect').value;
+            const tbody = document.getElementById('txTableBody');
+            tbody.innerHTML = '';
+
+            let filtered = [];
+
+            if (reportType === 'DAILY') {
+                const filterDate = document.getElementById('filterDate').value;
+                filtered = filterDate ? txData.filter(t => t.date === filterDate) : txData;
+            } else {
+                const filterMonth = document.getElementById('filterMonth').value;
+                filtered = filterMonth ? txData.filter(t => t.date && t.date.startsWith(filterMonth)) : txData;
+            }
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">මෙම කාල සීමාව සඳහා ගනුදෙනු වාර්තා නොමැත.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(tx => {
+                let badgeColor = tx.type === 'GRN' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+                                 tx.type.includes('LOADING') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="py-3 px-3 text-slate-400">${tx.date}</td>
+                        <td class="py-3 px-3"><span class="px-2.5 py-1 rounded-lg text-xs font-bold ${badgeColor}">${tx.type}</span></td>
+                        <td class="py-3 px-3 font-semibold text-slate-300">${tx.vehicle}</td>
+                        <td class="py-3 px-3 text-white font-medium">${tx.item_name}</td>
+                        <td class="py-3 px-3 font-bold">${tx.qty}</td>
+                        <td class="py-3 px-3 text-emerald-400 font-bold">Rs. ${parseFloat(tx.value || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function exportToExcel() {
+            const reportType = document.getElementById('reportTypeSelect').value;
+            let label = "";
+            let filteredTx = [];
+
+            if (reportType === 'DAILY') {
+                label = document.getElementById('filterDate').value || 'All_Dates';
+                filteredTx = document.getElementById('filterDate').value ? txData.filter(t => t.date === label) : txData;
+            } else {
+                label = document.getElementById('filterMonth').value || 'All_Months';
+                filteredTx = document.getElementById('filterMonth').value ? txData.filter(t => t.date && t.date.startsWith(label)) : txData;
+            }
+
+            const wb = XLSX.utils.book_new();
+            
+            const wsTx = XLSX.utils.json_to_sheet(filteredTx);
+            XLSX.utils.book_append_sheet(wb, wsTx, reportType === 'DAILY' ? "Daily_Transactions" : "Monthly_Transactions");
+
+            const stockReport = itemsData.map(i => ({
+                Item_Name: i.name,
+                Cost_Price_LKR: i.cost_price,
+                Selling_Price_LKR: i.sell_price,
+                Good_Stock_Qty: i.stock,
+                Damaged_Stock_Qty: i.damaged_stock || 0,
+                Total_Cost_Value_LKR: (parseFloat(i.stock) * parseFloat(i.cost_price)).toFixed(2)
+            }));
+            const wsStock = XLSX.utils.json_to_sheet(stockReport);
+            XLSX.utils.book_append_sheet(wb, wsStock, "Closing_Stock");
+
+            XLSX.writeFile(wb, `Bite_Inventory_Report_${reportType}_${label}.xlsx`);
+        }
+    </script>
+</body>
+</html>
