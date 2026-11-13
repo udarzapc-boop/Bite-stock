@@ -9,13 +9,84 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #060913; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass { background: rgba(13, 19, 36, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5); }
+        /* Default Dark Mode Variables */
+        :root {
+            --bg-main: #060913;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(13, 19, 36, 0.85);
+            --glass-border: rgba(56, 189, 248, 0.2);
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --nav-sub-bg: rgba(2, 6, 23, 0.85);
+            --table-hover: rgba(30, 41, 59, 0.4);
+        }
+
+        /* Light Mode Variables */
+        body.light-mode {
+            --bg-main: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(14, 165, 233, 0.3);
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --nav-sub-bg: rgba(226, 232, 240, 0.9);
+            --table-hover: rgba(241, 245, 249, 0.8);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 35px 0 rgba(0, 0, 0, 0.18);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .sub-nav {
+            background: var(--nav-sub-bg);
+        }
+
+        input, select {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-main) !important;
+        }
+
+        body.light-mode .text-white { color: #0f172a !important; }
+        body.light-mode .text-slate-200 { color: #1e293b !important; }
+        body.light-mode .text-slate-300 { color: #334155 !important; }
+        body.light-mode .text-slate-400 { color: #64748b !important; }
+        body.light-mode .bg-slate-900, body.light-mode .bg-slate-900\/80, body.light-mode .bg-slate-900\/90, body.light-mode .bg-slate-950\/80 {
+            background-color: #e2e8f0 !important;
+        }
+        body.light-mode .bg-slate-800, body.light-mode .bg-slate-800\/80 {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        body.light-mode button[type="submit"], body.light-mode .btn-keep-white {
+            color: #ffffff !important;
+        }
+
         .neon-glow { box-shadow: 0 0 20px rgba(56, 189, 248, 0.25); }
         .loader { border-top-color: #38bdf8; animation: spinner 0.8s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Fullscreen responsive window container styling */
-        .fullscreen-window { width: 100%; min-height: calc(100vh - 180px); display: flex; flex-direction: column; justify-content: flex-start; }
+
+        /* Fullscreen Window Styling */
+        .fullscreen-window {
+            width: 100%;
+            min-height: calc(100vh - 175px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -28,22 +99,27 @@
 
     <!-- LOGIN SECTION -->
     <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
-        <div class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md neon-glow">
+        <div class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md neon-glow relative">
+            <!-- Theme Toggle on Login -->
+            <button onclick="toggleTheme()" title="Switch Dark / Light Mode" class="absolute top-5 right-5 w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-amber-400 hover:scale-105 transition">
+                <i id="loginThemeIcon" class="fas fa-sun"></i>
+            </button>
+
             <div class="text-center mb-8">
                 <div class="w-20 h-20 bg-sky-500/10 text-sky-400 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl border border-sky-500/30 shadow-inner">
                     <i class="fas fa-microchip"></i>
                 </div>
                 <h1 class="text-2xl font-black tracking-wider text-white">BITE ERP <span class="text-sky-400">PRO</span></h1>
-                <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-semibold">ZOREX ZYSTEM</p>
+                <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest font-semibold">Cyberpunk Cloud Inventory System</p>
             </div>
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Username</label>
-                    <input type="text" id="loginUser" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white focus:outline-none focus:border-sky-400 transition" placeholder="admin">
+                    <input type="text" id="loginUser" required class="w-full px-4 py-3.5 rounded-2xl border focus:outline-none focus:border-sky-400 transition" placeholder="admin">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Password</label>
-                    <input type="password" id="loginPass" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white focus:outline-none focus:border-sky-400 transition" placeholder="••••">
+                    <input type="password" id="loginPass" required class="w-full px-4 py-3.5 rounded-2xl border focus:outline-none focus:border-sky-400 transition" placeholder="••••">
                 </div>
                 <p id="loginError" class="text-rose-400 text-xs font-medium hidden">වැරදි Username හෝ Password එකකි!</p>
                 <button type="submit" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-sky-500/25 tracking-wide">
@@ -60,39 +136,45 @@
     <div id="appSection" class="hidden flex-grow flex flex-col justify-between">
         <div>
             <!-- Navbar -->
-            <nav class="glass sticky top-0 z-40 px-6 py-4 flex justify-between items-center border-b border-slate-800">
+            <nav class="glass sticky top-0 z-40 px-6 py-3.5 flex justify-between items-center border-b border-slate-800/40">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-lg">
                         <i class="fas fa-cookie-bite"></i>
                     </div>
                     <div>
                         <span class="font-black tracking-wider text-lg text-white">BITE<span class="text-sky-400">STOCK</span></span>
-                        <span class="block text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Zorex Zystem</span>
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Enterprise Edition</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <button onclick="syncAllData()" class="bg-slate-800/80 hover:bg-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold text-sky-400 flex items-center gap-2 border border-slate-700 transition shadow">
+                <div class="flex items-center gap-3">
+                    <!-- Dark / Light Mode Toggle Button -->
+                    <button onclick="toggleTheme()" title="Switch Dark / Light Mode" class="bg-slate-800/80 hover:bg-slate-700 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-amber-400 flex items-center gap-2 border border-slate-700/50 transition shadow">
+                        <i id="appThemeIcon" class="fas fa-sun"></i>
+                        <span id="appThemeText" class="hidden md:inline">Light Mode</span>
+                    </button>
+
+                    <button onclick="syncAllData()" class="bg-slate-800/80 hover:bg-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold text-sky-400 flex items-center gap-2 border border-slate-700/50 transition shadow">
                         <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">Sync Cloud</span>
                     </button>
-                    <span id="currentUserBadge" class="text-xs font-bold bg-sky-500/10 text-sky-300 border border-sky-500/20 px-3.5 py-2 rounded-2xl shadow"></span>
-                    <button onclick="logout()" class="text-rose-400 hover:text-rose-300 text-sm p-2.5 transition">
+                    <span id="currentUserBadge" class="text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 px-3.5 py-2 rounded-2xl shadow"></span>
+                    <button onclick="logout()" class="text-rose-500 hover:text-rose-400 text-sm p-2.5 transition">
                         <i class="fas fa-power-off text-base"></i>
                     </button>
                 </div>
             </nav>
 
             <!-- Navigation Tabs -->
-            <div class="flex overflow-x-auto bg-slate-950/80 border-b border-slate-800/80 px-6 gap-3 py-2 scrollbar-none">
-                <button onclick="switchTab('dashboard')" class="tab-btn active-tab py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-sky-400 text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl bg-slate-900/40" data-tab="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</button>
-                <button onclick="switchTab('items')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="items"><i class="fas fa-tags"></i> Items & Prices</button>
-                <button onclick="switchTab('grn')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="grn"><i class="fas fa-plus-circle"></i> Batch GRN</button>
-                <button onclick="switchTab('loading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="loading"><i class="fas fa-truck-loading"></i> Batch Loading</button>
-                <button onclick="switchTab('unloading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="unloading"><i class="fas fa-undo-alt"></i> Unloading (Return)</button>
-                <button onclick="switchTab('reports')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-white whitespace-nowrap transition flex items-center gap-2 rounded-xl hover:bg-slate-900/40" data-tab="reports"><i class="fas fa-file-excel"></i> Reports & WhatsApp</button>
+            <div class="sub-nav flex overflow-x-auto border-b border-slate-800/40 px-6 gap-3 py-2 scrollbar-none">
+                <button onclick="switchTab('dashboard')" class="tab-btn active-tab py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-sky-400 text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl bg-sky-500/10" data-tab="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</button>
+                <button onclick="switchTab('items')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl" data-tab="items"><i class="fas fa-tags"></i> Items & Prices</button>
+                <button onclick="switchTab('grn')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl" data-tab="grn"><i class="fas fa-plus-circle"></i> Batch GRN</button>
+                <button onclick="switchTab('loading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl" data-tab="loading"><i class="fas fa-truck-loading"></i> Batch Loading</button>
+                <button onclick="switchTab('unloading')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl" data-tab="unloading"><i class="fas fa-undo-alt"></i> Unloading (Return)</button>
+                <button onclick="switchTab('reports')" class="tab-btn py-3 px-5 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-slate-400 hover:text-sky-400 whitespace-nowrap transition flex items-center gap-2 rounded-xl" data-tab="reports"><i class="fas fa-file-excel"></i> Reports & WhatsApp</button>
             </div>
 
-            <!-- Main Container (Fullscreen Type Layouts) -->
-            <div class="max-w-[96%] mx-auto p-6 space-y-6">
+            <!-- Main Container (100% Fullscreen Width) -->
+            <div class="w-full px-4 sm:px-6 py-6 space-y-6">
 
                 <!-- 1. DASHBOARD TAB -->
                 <div id="tab-dashboard" class="tab-content fullscreen-window space-y-6">
@@ -103,30 +185,30 @@
                         </div>
                         <div class="glass p-6 rounded-3xl border-l-4 border-emerald-400 shadow-xl">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">විකුණුම් වටිනාකම (Sell)</p>
-                            <h2 id="kpiTotalSell" class="text-3xl font-black text-emerald-400 mt-2">Rs. 0.00</h2>
+                            <h2 id="kpiTotalSell" class="text-3xl font-black text-emerald-500 mt-2">Rs. 0.00</h2>
                         </div>
                         <div class="glass p-6 rounded-3xl border-l-4 border-amber-400 shadow-xl">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">හොඳ තොගය (Good Packets)</p>
-                            <h2 id="kpiTotalUnits" class="text-3xl font-black text-amber-400 mt-2">0</h2>
+                            <h2 id="kpiTotalUnits" class="text-3xl font-black text-amber-500 mt-2">0</h2>
                         </div>
                         <div class="glass p-6 rounded-3xl border-l-4 border-rose-400 shadow-xl">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">නරක් වූ තොගය (Damaged)</p>
-                            <h2 id="kpiDamagedUnits" class="text-3xl font-black text-rose-400 mt-2">0</h2>
+                            <h2 id="kpiDamagedUnits" class="text-3xl font-black text-rose-500 mt-2">0</h2>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow">
                         <div class="glass p-6 rounded-3xl shadow-xl flex flex-col justify-between">
                             <h3 class="font-bold text-slate-200 mb-4 text-sm uppercase tracking-wider">Live Stock Levels</h3>
-                            <div class="flex-grow flex items-center justify-center">
-                                <canvas id="stockChart" height="260"></canvas>
+                            <div class="flex-grow flex items-center justify-center min-h-[300px]">
+                                <canvas id="stockChart"></canvas>
                             </div>
                         </div>
                         <div class="glass p-6 rounded-3xl shadow-xl overflow-x-auto flex flex-col">
                             <h3 class="font-bold text-slate-200 mb-4 text-sm uppercase tracking-wider">වත්මන් තොග සාරාංශය</h3>
-                            <div class="flex-grow overflow-y-auto max-h-[350px]">
+                            <div class="flex-grow overflow-y-auto max-h-[420px]">
                                 <table class="w-full text-left text-sm">
-                                    <thead class="text-slate-400 border-b border-slate-800 text-xs uppercase sticky top-0 bg-slate-950/80 backdrop-blur">
+                                    <thead class="text-slate-400 border-b border-slate-800/50 text-xs uppercase sticky top-0 bg-slate-950/80 backdrop-blur">
                                         <tr>
                                             <th class="py-3 px-2">Item</th>
                                             <th class="py-3 px-2">Good</th>
@@ -134,7 +216,7 @@
                                             <th class="py-3 px-2">Total Value</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="dashboardStockTable" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                                    <tbody id="dashboardStockTable" class="divide-y divide-slate-800/40 font-medium"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -143,114 +225,151 @@
 
                 <!-- 2. ITEMS & PRICES TAB -->
                 <div id="tab-items" class="tab-content fullscreen-window hidden space-y-6">
-                    <div class="glass p-8 rounded-3xl max-w-2xl shadow-2xl mx-auto w-full">
-                        <h3 class="text-xl font-bold mb-6 text-sky-400 flex items-center gap-3"><i class="fas fa-plus-circle text-2xl"></i> Add New Item(Stock)</h3>
-                        <form id="addItemForm" class="space-y-5">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item Name (උදා: Murukku 50g)</label>
-                                <input type="text" id="itemName" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
-                            </div>
-                            <div class="grid grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+                        <!-- Add Item Form -->
+                        <div class="glass p-8 rounded-3xl shadow-2xl h-fit">
+                            <h3 class="text-xl font-bold mb-6 text-sky-400 flex items-center gap-3"><i class="fas fa-plus-circle text-2xl"></i> අලුත් Bite වර්ගයක් එකතු කරන්න</h3>
+                            <form id="addItemForm" class="space-y-5">
                                 <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">නිෂ්පාදන මිල (Cost - Rs)</label>
-                                    <input type="number" step="0.01" id="itemCost" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item Name (උදා: Murukku 50g)</label>
+                                    <input type="text" id="itemName" required class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-sky-400 outline-none text-base">
                                 </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">නිෂ්පාදන මිල (Cost)</label>
+                                        <input type="number" step="0.01" id="itemCost" required class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-sky-400 outline-none text-base">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">විකුණුම් මිල (Sell)</label>
+                                        <input type="number" step="0.01" id="itemSell" required class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-sky-400 outline-none text-base">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-4 rounded-2xl transition shadow-xl shadow-sky-500/25 tracking-wider mt-2">SAVE NEW ITEM</button>
+                            </form>
+                        </div>
+
+                        <!-- Manage / Delete Existing Items Table -->
+                        <div class="glass p-8 rounded-3xl shadow-2xl lg:col-span-2 flex flex-col">
+                            <div class="flex justify-between items-center mb-6">
                                 <div>
-                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">විකුණුම් මිල (Sell - Rs)</label>
-                                    <input type="number" step="0.01" id="itemSell" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-sky-400 outline-none text-base">
+                                    <h3 class="text-xl font-bold text-white flex items-center gap-3"><i class="fas fa-list-ul text-sky-400"></i> දැනට ඇති Items කළමනාකරණය</h3>
+                                    <p class="text-xs text-slate-400 mt-1">අනවශ්‍ය Item එකක් ඇත්නම් Delete බොත්තම ඔබා ඉවත් කරන්න.</p>
                                 </div>
+                                <span id="totalItemsBadge" class="px-3.5 py-1.5 rounded-xl bg-sky-500/10 text-sky-400 text-xs font-bold border border-sky-500/20">0 Items</span>
                             </div>
-                            <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-4 rounded-2xl transition shadow-xl shadow-sky-500/25 tracking-wider mt-4">SAVE NEW ITEM</button>
-                        </form>
+
+                            <div class="overflow-x-auto flex-grow border border-slate-800/50 rounded-2xl">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-900/80 text-slate-400 text-xs uppercase border-b border-slate-800/50">
+                                        <tr>
+                                            <th class="p-4">Item Name</th>
+                                            <th class="p-4">Cost Price</th>
+                                            <th class="p-4">Sell Price</th>
+                                            <th class="p-4">Current Stock</th>
+                                            <th class="p-4 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="manageItemsTableBody" class="divide-y divide-slate-800/40 font-medium">
+                                        <tr><td colspan="5" class="p-6 text-center text-slate-500">Items පූරණය වෙමින් පවතී...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- 3. BATCH GRN TAB -->
                 <div id="tab-grn" class="tab-content fullscreen-window hidden space-y-6">
-                    <div class="glass p-8 rounded-3xl border-t-4 border-emerald-400 max-w-5xl mx-auto w-full shadow-2xl">
-                        <h3 class="text-xl font-bold mb-1 text-emerald-400 flex items-center gap-3"><i class="fas fa-boxes text-2xl"></i> Multi-Item Batch GRN (Stock In)</h3>
-                        <p class="text-xs text-slate-400 mb-6">අයිතම කිහිපයක් එකවර එකතු කර, අවශ්‍ය නම් ඉවත් කර, 'Submit GRN Batch' ඔබන්න.</p>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-4">
-                            <div class="sm:col-span-2">
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
-                                <select id="grnItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-emerald-400 outline-none item-dropdown"></select>
+                    <div class="glass p-8 rounded-3xl border-t-4 border-emerald-400 w-full flex-grow flex flex-col justify-between shadow-2xl">
+                        <div>
+                            <h3 class="text-xl font-bold mb-1 text-emerald-400 flex items-center gap-3"><i class="fas fa-boxes text-2xl"></i> Multi-Item Batch GRN (Stock In)</h3>
+                            <p class="text-xs text-slate-400 mb-6">අයිතම කිහිපයක් එකවර එකතු කර, අවශ්‍ය නම් ඉවත් කර, 'Submit GRN Batch' ඔබන්න.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-4">
+                                <div class="md:col-span-2">
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                    <select id="grnItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-emerald-400 outline-none item-dropdown"></select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
+                                    <input type="number" id="grnQty" min="1" placeholder="උදා: 100" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-emerald-400 outline-none">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" onclick="addToGrnBatch()" class="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold px-6 py-3.5 rounded-2xl text-sm transition flex items-center justify-center gap-2 shadow">
+                                        <i class="fas fa-plus"></i> Add to Batch
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
-                                <input type="number" id="grnQty" min="1" placeholder="උදා: 100" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-emerald-400 outline-none">
+
+                            <div class="overflow-x-auto my-6 border border-slate-800/50 rounded-2xl shadow-inner min-h-[250px]">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800/50">
+                                        <tr>
+                                            <th class="p-4">Item Name</th>
+                                            <th class="p-4">Quantity</th>
+                                            <th class="p-4">Est. Value (LKR)</th>
+                                            <th class="p-4 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="grnCartTableBody" class="divide-y divide-slate-800/40">
+                                        <tr><td colspan="4" class="p-8 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <button type="button" onclick="addToGrnBatch()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold px-6 py-3 rounded-2xl text-sm transition flex items-center gap-2 mb-6 shadow">
-                            <i class="fas fa-plus"></i> Batch List එකට එකතු කරන්න
-                        </button>
 
-                        <div class="overflow-x-auto mb-6 border border-slate-800 rounded-2xl shadow-inner">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800">
-                                    <tr>
-                                        <th class="p-4">Item Name</th>
-                                        <th class="p-4">Quantity</th>
-                                        <th class="p-4">Est. Value (LKR)</th>
-                                        <th class="p-4 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="grnCartTableBody" class="divide-y divide-slate-800">
-                                    <tr><td colspan="4" class="p-6 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <button type="button" onclick="submitGrnBatch()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-emerald-600/30 tracking-wider">
+                        <button type="button" onclick="submitGrnBatch()" class="btn-keep-white w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-emerald-600/30 tracking-wider">
                             SUBMIT GRN BATCH TO CLOUD (+ STOCK)
                         </button>
                     </div>
                 </div>
 
-                <!-- 4. BATCH LOADING TAB -->
+                <!-- 4. BATCH LOADING TAB (UPDATED TO SAVE TO Vehicle_Load SHEET) -->
                 <div id="tab-loading" class="tab-content fullscreen-window hidden space-y-6">
-                    <div class="glass p-8 rounded-3xl border-t-4 border-amber-400 max-w-5xl mx-auto w-full shadow-2xl">
-                        <h3 class="text-xl font-bold mb-1 text-amber-400 flex items-center gap-3"><i class="fas fa-truck-loading text-2xl"></i> Multi-Item Batch Loading (Out)</h3>
-                        <p class="text-xs text-slate-400 mb-6">වාහනයට බඩු පැටවීමට අයිතම කිහිපයක් එකතු කර Real-time Stock validation සමඟ Submit කරන්න.</p>
-                        
-                        <div class="mb-5 max-w-md">
-                            <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
-                            <input type="text" id="loadVehicle" placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none">
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-4">
-                            <div class="sm:col-span-2">
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
-                                <select id="loadItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none item-dropdown"></select>
+                    <div class="glass p-8 rounded-3xl border-t-4 border-amber-400 w-full flex-grow flex flex-col justify-between shadow-2xl">
+                        <div>
+                            <h3 class="text-xl font-bold mb-1 text-amber-400 flex items-center gap-3"><i class="fas fa-truck-loading text-2xl"></i> Multi-Item Batch Loading (Out)</h3>
+                            <p class="text-xs text-slate-400 mb-6">වාහනයට බඩු පැටවීමට අයිතම කිහිපයක් එකතු කර Real-time Stock validation සමඟ Submit කරන්න.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-4">
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
+                                    <input type="text" id="loadVehicle" placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-amber-400 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                    <select id="loadItemSelect" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-amber-400 outline-none item-dropdown"></select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
+                                    <input type="number" id="loadQty" min="1" placeholder="උදා: 50" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-amber-400 outline-none">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" onclick="addToLoadBatch()" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold px-6 py-3.5 rounded-2xl text-sm transition flex items-center justify-center gap-2 shadow">
+                                        <i class="fas fa-plus"></i> Add to Load
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Qty)</label>
-                                <input type="number" id="loadQty" min="1" placeholder="උදා: 50" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-amber-400 outline-none">
+                            <p id="loadValidationError" class="text-rose-500 text-xs font-bold mb-4 hidden"></p>
+
+                            <div class="overflow-x-auto my-6 border border-slate-800/50 rounded-2xl shadow-inner min-h-[250px]">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800/50">
+                                        <tr>
+                                            <th class="p-4">Item Name</th>
+                                            <th class="p-4">Quantity</th>
+                                            <th class="p-4">Est. Value (LKR)</th>
+                                            <th class="p-4 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="loadCartTableBody" class="divide-y divide-slate-800/40">
+                                        <tr><td colspan="4" class="p-8 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <p id="loadValidationError" class="text-rose-400 text-xs font-semibold mb-4 hidden"></p>
-                        
-                        <button type="button" onclick="addToLoadBatch()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold px-6 py-3 rounded-2xl text-sm transition flex items-center gap-2 mb-6 shadow">
-                            <i class="fas fa-plus"></i> Load List එකට එකතු කරන්න
-                        </button>
 
-                        <div class="overflow-x-auto mb-6 border border-slate-800 rounded-2xl shadow-inner">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-900/90 text-slate-400 text-xs uppercase border-b border-slate-800">
-                                    <tr>
-                                        <th class="p-4">Item Name</th>
-                                        <th class="p-4">Quantity</th>
-                                        <th class="p-4">Est. Value (LKR)</th>
-                                        <th class="p-4 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="loadCartTableBody" class="divide-y divide-slate-800">
-                                    <tr><td colspan="4" class="p-6 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <button type="button" onclick="submitLoadBatch()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-amber-600/30 tracking-wider">
+                        <button type="button" onclick="submitLoadBatch()" class="btn-keep-white w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-amber-600/30 tracking-wider">
                             SUBMIT LOADING BATCH (- STOCK)
                         </button>
                     </div>
@@ -258,75 +377,83 @@
 
                 <!-- 5. UNLOADING TAB -->
                 <div id="tab-unloading" class="tab-content fullscreen-window hidden space-y-6">
-                    <div class="glass p-8 rounded-3xl border-t-4 border-purple-400 max-w-2xl mx-auto w-full shadow-2xl">
-                        <h3 class="text-xl font-bold mb-1 text-purple-400 flex items-center gap-3"><i class="fas fa-undo-alt text-2xl"></i> Unloading - Good / Bad </h3>
-                        <p class="text-xs text-slate-400 mb-6">වාහනයෙන් ගෙන ආපු බඩු හොඳ තත්ත්වයේද නැත්නම් නරක් වී ඇත්දැයි තෝරන්න.</p>
-                        <form id="unloadingForm" class="space-y-5">
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
-                                <input type="text" id="unloadVehicle" required placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
-                                <select id="unloadItemSelect" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none item-dropdown"></select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">තත්ත්වය (Stock Type)</label>
-                                <select id="unloadCondition" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
-                                    <option value="GOOD">Good Stock (ආපහු ප්‍රධාන Stock එකට එකතු කරන්න)</option>
-                                    <option value="DAMAGED">Damaged / Expired (නරක් වූ තොගයට යොමු කරන්න)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Quantity)</label>
-                                <input type="number" id="unloadQty" min="1" required class="w-full mt-2 px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-white focus:border-purple-400 outline-none">
-                            </div>
-                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-purple-600/30 tracking-wider mt-4">UNLOAD PROCESS</button>
-                        </form>
+                    <div class="glass p-8 rounded-3xl border-t-4 border-purple-400 w-full flex-grow flex flex-col justify-between shadow-2xl">
+                        <div>
+                            <h3 class="text-xl font-bold mb-1 text-purple-400 flex items-center gap-3"><i class="fas fa-undo-alt text-2xl"></i> Unloading - බඩු ආපසු භාරගැනීම</h3>
+                            <p class="text-xs text-slate-400 mb-6">වාහනයෙන් ගෙන ආපු බඩු හොඳ තත්ත්වයේද නැත්නම් නරක් වී ඇත්දැයි තෝරන්න.</p>
+                            
+                            <form id="unloadingForm" class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">වාහන අංකය / Rep නම</label>
+                                        <input type="text" id="unloadVehicle" required placeholder="WP LB-4521 / Kasun" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-purple-400 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Item එක තෝරන්න</label>
+                                        <select id="unloadItemSelect" required class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-purple-400 outline-none item-dropdown"></select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">තත්ත්වය (Stock Type)</label>
+                                        <select id="unloadCondition" required class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-purple-400 outline-none">
+                                            <option value="GOOD">Good Stock (ආපහු ප්‍රධාන Stock එකට)</option>
+                                            <option value="DAMAGED">Damaged / Expired (නරක් වූ තොගයට)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">ප්‍රමාණය (Quantity)</label>
+                                        <input type="number" id="unloadQty" min="1" required placeholder="උදා: 10" class="w-full mt-2 px-4 py-3.5 rounded-2xl border focus:border-purple-400 outline-none">
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-4">
+                                    <button type="submit" class="btn-keep-white w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl transition shadow-xl shadow-purple-600/30 tracking-wider">UNLOAD PROCESS</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
                 <!-- 6. REPORTS & WHATSAPP SUMMARY TAB -->
                 <div id="tab-reports" class="tab-content fullscreen-window hidden space-y-6">
-                    <div class="glass p-8 rounded-3xl space-y-5 shadow-2xl">
+                    <div class="glass p-8 rounded-3xl space-y-5 shadow-2xl w-full">
                         <div class="flex flex-wrap justify-between items-center gap-4">
                             <div>
-                                <h3 class="text-xl font-bold text-white flex items-center gap-3"><i class="fas fa-file-invoice-dollar text-2xl text-emerald-400"></i> Daily / Monthly Report  & WhatsApp</h3>
+                                <h3 class="text-xl font-bold text-white flex items-center gap-3"><i class="fas fa-file-invoice-dollar text-2xl text-emerald-400"></i> දෛනික සහ මාසික වාර්තා & WhatsApp</h3>
                                 <p class="text-xs text-slate-400">වාර්තා පරීක්ෂා කර, Excel ලෙස Download කරගන්න හෝ WhatsApp හරහා Owner ට යවන්න.</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <button onclick="sendWhatsAppSummary()" class="bg-emerald-500 hover:bg-emerald-400 px-6 py-3 rounded-2xl text-sm font-bold text-slate-950 flex items-center gap-2 shadow-lg shadow-emerald-500/25 transition">
                                     <i class="fab fa-whatsapp text-lg"></i> Send WhatsApp Summary
                                 </button>
-                                <button onclick="exportToExcel()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-6 py-3 rounded-2xl text-sm font-bold text-white flex items-center gap-2 transition shadow">
+                                <button onclick="exportToExcel()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700/50 px-6 py-3 rounded-2xl text-sm font-bold text-white flex items-center gap-2 transition shadow">
                                     <i class="fas fa-file-excel text-emerald-400 text-lg"></i> Excel Export
                                 </button>
                             </div>
                         </div>
 
                         <!-- Filter Controls -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-4 border-t border-slate-800">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pt-4 border-t border-slate-800/50">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">වාර්තා වර්ගය (Report Type)</label>
-                                <select id="reportTypeSelect" onchange="toggleReportFilterType()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-sm outline-none focus:border-sky-400">
+                                <select id="reportTypeSelect" onchange="toggleReportFilterType()" class="w-full px-4 py-3 rounded-2xl border text-sm outline-none focus:border-sky-400">
                                     <option value="DAILY">Daily Report (දෛනික වාර්තාව)</option>
                                     <option value="MONTHLY">Monthly Report (මාසික වාර්තාව)</option>
                                 </select>
                             </div>
                             <div id="dailyFilterContainer">
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">දිනය තෝරන්න (Select Date)</label>
-                                <input type="date" id="filterDate" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-sm text-white outline-none focus:border-sky-400">
+                                <input type="date" id="filterDate" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl border text-sm outline-none focus:border-sky-400">
                             </div>
                             <div id="monthlyFilterContainer" class="hidden">
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">මාසය තෝරන්න (Select Month)</label>
-                                <input type="month" id="filterMonth" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-sm text-white outline-none focus:border-sky-400">
+                                <input type="month" id="filterMonth" onchange="renderTransactions()" class="w-full px-4 py-3 rounded-2xl border text-sm outline-none focus:border-sky-400">
                             </div>
                         </div>
                     </div>
 
-                    <div class="glass p-6 rounded-3xl overflow-x-auto shadow-2xl flex-grow">
+                    <div class="glass p-6 rounded-3xl overflow-x-auto shadow-2xl flex-grow w-full">
                         <table class="w-full text-left text-sm">
-                            <thead class="text-slate-400 border-b border-slate-800 text-xs uppercase">
+                            <thead class="text-slate-400 border-b border-slate-800/50 text-xs uppercase">
                                 <tr>
                                     <th class="py-3 px-3">Date</th>
                                     <th class="py-3 px-3">Type</th>
@@ -336,7 +463,7 @@
                                     <th class="py-3 px-3">Value (LKR)</th>
                                 </tr>
                             </thead>
-                            <tbody id="txTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                            <tbody id="txTableBody" class="divide-y divide-slate-800/40 font-medium"></tbody>
                         </table>
                     </div>
                 </div>
@@ -345,8 +472,8 @@
         </div>
 
         <!-- Watermark Footer -->
-        <footer class="w-full text-center py-4 border-t border-slate-800/80 bg-slate-950/60 mt-10">
-            <p class="text-xs font-bold uppercase tracking-widest text-slate-500">ZOREX Zystem</p>
+        <footer class="w-full text-center py-4 border-t border-slate-800/40 sub-nav mt-8">
+            <p class="text-xs font-black uppercase tracking-widest text-slate-500">ZOREX Zystem</p>
         </footer>
     </div>
 
@@ -368,12 +495,47 @@
         document.getElementById('filterMonth').value = new Date().toISOString().slice(0, 7);
 
         window.onload = () => {
+            initTheme();
             const savedUser = localStorage.getItem('bite_user');
             if (savedUser) {
                 showApp(JSON.parse(savedUser));
             }
             loadOfflineCache();
         };
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('bite_theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                updateThemeIcons(true);
+            } else {
+                document.body.classList.remove('light-mode');
+                updateThemeIcons(false);
+            }
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            localStorage.setItem('bite_theme', isLight ? 'light' : 'dark');
+            updateThemeIcons(isLight);
+            if(itemsData.length > 0) updateUI();
+        }
+
+        function updateThemeIcons(isLight) {
+            const loginIcon = document.getElementById('loginThemeIcon');
+            const appIcon = document.getElementById('appThemeIcon');
+            const appText = document.getElementById('appThemeText');
+
+            if (isLight) {
+                if(loginIcon) loginIcon.className = 'fas fa-moon text-slate-700';
+                if(appIcon) appIcon.className = 'fas fa-moon text-slate-700';
+                if(appText) appText.innerText = 'Dark Mode';
+            } else {
+                if(loginIcon) loginIcon.className = 'fas fa-sun text-amber-400';
+                if(appIcon) appIcon.className = 'fas fa-sun text-amber-400';
+                if(appText) appText.innerText = 'Light Mode';
+            }
+        }
 
         function toggleLoader(show) {
             const el = document.getElementById('loadingOverlay');
@@ -443,11 +605,11 @@
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('border-sky-400', 'text-sky-400', 'bg-slate-900/60');
+                btn.classList.remove('border-sky-400', 'text-sky-400', 'bg-sky-500/10');
                 btn.classList.add('border-transparent', 'text-slate-400');
             });
             const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            activeBtn.classList.add('border-sky-400', 'text-sky-400', 'bg-slate-900/60');
+            activeBtn.classList.add('border-sky-400', 'text-sky-400', 'bg-sky-500/10');
             activeBtn.classList.remove('border-transparent', 'text-slate-400');
         }
 
@@ -483,7 +645,15 @@
             const tbody = document.getElementById('dashboardStockTable');
             tbody.innerHTML = '';
 
+            const manageTbody = document.getElementById('manageItemsTableBody');
+            manageTbody.innerHTML = '';
+            document.getElementById('totalItemsBadge').innerText = `${itemsData.length} Items`;
+
             const labels = [], stockValues = [];
+
+            if (itemsData.length === 0) {
+                manageTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">තවම Items ඇතුළත් කර නැත.</td></tr>`;
+            }
 
             itemsData.forEach(item => {
                 const stk = parseFloat(item.stock) || 0;
@@ -503,9 +673,23 @@
                 tbody.innerHTML += `
                     <tr>
                         <td class="py-3 px-2 font-semibold text-white">${item.name}</td>
-                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-sky-400 border border-slate-800">${stk}</span></td>
-                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-rose-400 border border-slate-800">${dmg}</span></td>
-                        <td class="py-3 px-2 font-bold text-emerald-400">Rs. ${rowVal.toLocaleString()}</td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-sky-400 border border-slate-800/50">${stk}</span></td>
+                        <td class="py-3 px-2"><span class="px-2.5 py-1 rounded-lg bg-slate-900 text-rose-400 border border-slate-800/50">${dmg}</span></td>
+                        <td class="py-3 px-2 font-bold text-emerald-500">Rs. ${rowVal.toLocaleString()}</td>
+                    </tr>
+                `;
+
+                manageTbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 font-bold text-white">${item.name}</td>
+                        <td class="p-4 text-slate-400">Rs. ${cost.toLocaleString()}</td>
+                        <td class="p-4 text-emerald-500 font-semibold">Rs. ${sell.toLocaleString()}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 font-bold">${stk}</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteItem('${item.id}', '${item.name}')" title="Delete Item" class="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-500/20 transition">
+                                <i class="fas fa-trash-alt mr-1"></i> Delete
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -519,9 +703,29 @@
             renderTransactions();
         }
 
+        async function deleteItem(itemId, itemName) {
+            if (!confirm(`ඔබට "${itemName}" යන Item එක සම්පූර්ණයෙන්ම Delete කිරීමට අවශ්‍ය බව විශ්වාසද?`)) {
+                return;
+            }
+
+            toggleLoader(true);
+            try {
+                await fetch(`${API_URL}/id/${itemId}?sheet=Items`, { method: 'DELETE' });
+                await syncAllData();
+                alert(`"${itemName}" සාර්ථකව ඉවත් කරන ලදී!`);
+            } catch (err) {
+                console.error(err);
+                alert("Item එක Delete කිරීමේදී දෝෂයක් ඇති විය!");
+            }
+            toggleLoader(false);
+        }
+
         function renderChart(labels, data) {
             const ctx = document.getElementById('stockChart').getContext('2d');
             if (stockChartInstance) stockChartInstance.destroy();
+            const isLight = document.body.classList.contains('light-mode');
+            const tickColor = isLight ? '#475569' : '#94a3b8';
+            const gridColor = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
             
             stockChartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -530,8 +734,8 @@
                     datasets: [{
                         label: 'Available Stock',
                         data: data,
-                        backgroundColor: 'rgba(56, 189, 248, 0.5)',
-                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.55)',
+                        borderColor: '#0284c7',
                         borderWidth: 1.5,
                         borderRadius: 8
                     }]
@@ -541,8 +745,8 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                        y: { ticks: { color: tickColor }, grid: { color: gridColor } },
+                        x: { ticks: { color: tickColor }, grid: { display: false } }
                     }
                 }
             });
@@ -582,13 +786,7 @@
             const item = itemsData.find(i => i.id === itemId);
             if (!item) return;
 
-            grnCart.push({
-                id: item.id,
-                name: item.name,
-                qty: qty,
-                cost: parseFloat(item.cost_price) || 0
-            });
-
+            grnCart.push({ id: item.id, name: item.name, qty: qty, cost: parseFloat(item.cost_price) || 0 });
             document.getElementById('grnQty').value = '';
             renderGrnCart();
         }
@@ -601,7 +799,7 @@
         function renderGrnCart() {
             const tbody = document.getElementById('grnCartTableBody');
             if (grnCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">Batch එකට තවම අයිතම එකතු කර නැත.</td></tr>`;
                 return;
             }
 
@@ -612,8 +810,8 @@
                     <tr>
                         <td class="p-4 font-semibold text-white">${item.name}</td>
                         <td class="p-4 text-sky-400 font-bold">${item.qty}</td>
-                        <td class="p-4 text-emerald-400">Rs. ${estVal.toLocaleString()}</td>
-                        <td class="p-4 text-center"><button onclick="removeFromGrnBatch(${index})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fas fa-trash"></i></button></td>
+                        <td class="p-4 text-emerald-500">Rs. ${estVal.toLocaleString()}</td>
+                        <td class="p-4 text-center"><button onclick="removeFromGrnBatch(${index})" class="text-rose-500 hover:text-rose-400 p-1"><i class="fas fa-trash"></i></button></td>
                     </tr>
                 `;
             });
@@ -680,18 +878,12 @@
             let existingInCart = loadCart.reduce((sum, i) => i.id === itemId ? sum + i.qty : sum, 0);
 
             if ((existingInCart + qty) > currentStock) {
-                errEl.innerText = `දෝෂයයි: ${item.name} සඳහා ප්‍රමාණවත් Stock නැත! (දැනට ඇත්තේ: ${currentStock}, ඔබ ඉල්ලා ඇති එකතුව: ${existingInCart + qty})`;
+                errEl.innerText = `දෝෂයයි: ${item.name} සඳහා ප්‍රමාණවත් Stock නැත! (දැනට ඇත්තේ: ${currentStock})`;
                 errEl.classList.remove('hidden');
                 return;
             }
 
-            loadCart.push({
-                id: item.id,
-                name: item.name,
-                qty: qty,
-                cost: parseFloat(item.cost_price) || 0
-            });
-
+            loadCart.push({ id: item.id, name: item.name, qty: qty, cost: parseFloat(item.cost_price) || 0 });
             document.getElementById('loadQty').value = '';
             renderLoadCart();
         }
@@ -704,7 +896,7 @@
         function renderLoadCart() {
             const tbody = document.getElementById('loadCartTableBody');
             if (loadCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500">Loading List එක හිස්ය.</td></tr>`;
                 return;
             }
 
@@ -714,14 +906,17 @@
                 tbody.innerHTML += `
                     <tr>
                         <td class="p-4 font-semibold text-white">${item.name}</td>
-                        <td class="p-4 text-amber-400 font-bold">${item.qty}</td>
-                        <td class="p-4 text-emerald-400">Rs. ${estVal.toLocaleString()}</td>
-                        <td class="p-4 text-center"><button onclick="removeFromLoadBatch(${index})" class="text-rose-400 hover:text-rose-300 p-1"><i class="fas fa-trash"></i></button></td>
+                        <td class="p-4 text-amber-500 font-bold">${item.qty}</td>
+                        <td class="p-4 text-emerald-500">Rs. ${estVal.toLocaleString()}</td>
+                        <td class="p-4 text-center"><button onclick="removeFromLoadBatch(${index})" class="text-rose-500 hover:text-rose-400 p-1"><i class="fas fa-trash"></i></button></td>
                     </tr>
                 `;
             });
         }
 
+        // ==========================================
+        // FIXED & UPDATED: SUBMIT LOADING BATCH (SAVES TO Vehicle_Load SHEET)
+        // ==========================================
         async function submitLoadBatch() {
             const vehicle = document.getElementById('loadVehicle').value.trim();
             if (!vehicle) {
@@ -743,13 +938,16 @@
                 let currentStock = parseFloat(item.stock) || 0;
                 let newStock = currentStock - entry.qty;
                 let txValue = entry.qty * entry.cost;
+                let loadId = 'LOAD-' + Date.now() + Math.floor(Math.random()*1000);
 
+                // 1. Update Items Stock in Cloud
                 await fetch(`${API_URL}/id/${entry.id}?sheet=Items`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ data: { stock: newStock } })
                 });
 
+                // 2. Save to Transactions Sheet
                 await fetch(`${API_URL}?sheet=Transactions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -763,13 +961,29 @@
                         value: txValue
                     }] })
                 });
+
+                // 3. Save to Vehicle_Load Sheet (POS App reads this sheet)
+                await fetch(`${API_URL}?sheet=Vehicle_Load`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{
+                        load_id: loadId,
+                        date: today,
+                        rep_name: vehicle,
+                        vehicle_no: vehicle,
+                        item_id: entry.id,
+                        item_name: entry.name,
+                        loaded_qty: entry.qty,
+                        remaining_qty: entry.qty
+                    }] })
+                });
             }
 
             loadCart = [];
             document.getElementById('loadVehicle').value = '';
             renderLoadCart();
             await syncAllData();
-            alert("Loading Batch එක සාර්ථකව Process විය!");
+            alert("Loading Batch එක සාර්ථකව Process වී Vehicle_Load වෙත යොමු විය!");
         }
 
         document.getElementById('unloadingForm').addEventListener('submit', async (e) => {
@@ -890,8 +1104,8 @@
             }
 
             filtered.forEach(tx => {
-                let badgeColor = tx.type === 'GRN' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                                 tx.type.includes('LOADING') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
+                let badgeColor = tx.type === 'GRN' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+                                 tx.type.includes('LOADING') ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-purple-500/10 text-purple-500 border border-purple-500/20';
                 tbody.innerHTML += `
                     <tr>
                         <td class="py-3 px-3 text-slate-400">${tx.date}</td>
@@ -899,7 +1113,7 @@
                         <td class="py-3 px-3 font-semibold text-slate-300">${tx.vehicle}</td>
                         <td class="py-3 px-3 text-white font-medium">${tx.item_name}</td>
                         <td class="py-3 px-3 font-bold">${tx.qty}</td>
-                        <td class="py-3 px-3 text-emerald-400 font-bold">Rs. ${parseFloat(tx.value || 0).toLocaleString()}</td>
+                        <td class="py-3 px-3 text-emerald-500 font-bold">Rs. ${parseFloat(tx.value || 0).toLocaleString()}</td>
                     </tr>
                 `;
             });
